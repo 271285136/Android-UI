@@ -1,5 +1,3 @@
-package com.example.mtextview;
-
 import android.content.Context;
 import android.graphics.Color;
 import android.text.Html;
@@ -31,10 +29,12 @@ import java.util.regex.Pattern;
 
 public class FillBlankView {
     private List<String> answers;
-    private int editTextSize = 14;
+    private int editTextSize = 16;
     private TextView textView;
     private List<EditText> editTexts = new ArrayList<>();
     private String splitReg = "\\_{5,}";
+
+    public static final String FILL_REG = ":|!|/|\\.|\"|\\(|\\)|\\*|\\+|,|-|;|<|>|=|\\?|\\[|\\]|\\^|_|\\{|\\}|~|`|\\s|‘|’|。|“|”|，|＇|，|。|？|！|：|、|@|……|“|”|；|‘|’|～|\\.|-|（|）|《|》|〈|〉|〔|〕|\\*|\\&|\\［|\\］|【|】|——|｀|#|￥|\\%|ˇ|•|\\+|=|\\｛|\\｝|ˉ|¨|．|｜|〃|\\‖|々|「|」|『|』|〖|〗|∶|＇|＂|／|＊|＆|＼|＃|＄|％|︿|＿|＋|－|＝|＜| ";
 
     public FillBlankViewListener fillBlankViewListener;
 
@@ -70,6 +70,13 @@ public class FillBlankView {
         }
     }
 
+    public void enabledEditTexts() {
+        for (EditText editText : editTexts) {
+            editText.setEnabled(true);
+            editText.setBackgroundResource(R.drawable.onfocusno);
+        }
+    }
+
     /**
      * 重置输入框
      */
@@ -77,7 +84,7 @@ public class FillBlankView {
         for (EditText editText : editTexts) {
             editText.setText("");
             editText.setEnabled(true);
-            editText.setTextColor(textView.getResources().getColor(android.R.color.holo_blue_bright));
+//            editText.setTextColor(textView.getResources().getColor(android.R.color.holo_blue_bright));
         }
     }
 
@@ -115,16 +122,17 @@ public class FillBlankView {
      * @param demensions
      * @param height
      */
-    private void generateEditText(Context context, FrameLayout container, List<TextDemensions> demensions,int height) {
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    private void generateEditText(Context context, FrameLayout container, List<TextDemensions> demensions, int height) {
         for(TextDemensions dem:demensions){
             final EditText editText=new EditText(context);
             editText.setTextSize(editTextSize);
-            editText.setBackgroundResource(R.drawable.selector_question_edittext);
+            editText.setBackgroundResource(R.drawable.onfocusno);
             editText.setSingleLine();
             editText.setPadding(10,0,10,0);
             editText.setGravity(Gravity.CENTER);
 //            editText.setHint("");
-            editText.setTextColor(container.getResources().getColor(android.R.color.holo_blue_bright));
+//            editText.setTextColor(container.getResources().getColor(android.R.color.holo_blue_bright));
 
             final float scale = container.getResources().getDisplayMetrics().density;
             height = (int) (28 * scale + 0.5f);
@@ -245,6 +253,7 @@ public class FillBlankView {
      * @param userAnswers 用户大题记录
      */
     public void setUserAnswers(List<String> userAnswers) {
+        if (userAnswers == null) return;
         for (int i = 0; i < editTexts.size(); i++) {
             String userAnswer = "";
             EditText editText = editTexts.get(i);
@@ -252,16 +261,33 @@ public class FillBlankView {
                 userAnswer = userAnswers.get(i);
                 editText.setText(userAnswer);
             }
-            if (userAnswer.equalsIgnoreCase(answers.get(i))) {
-                editText.setTextColor(Color.GREEN);
+            if (checkFillAnswer(answers.get(i), userAnswer)){// userAnswer.equalsIgnoreCase(answers.get(i))) {
+//                editText.setTextColor(Color.GREEN);
+                editText.setBackgroundResource(R.drawable.edittext_answer_right_bg);
             }else {
-                editText.setTextColor(Color.RED);
+//                editText.setTextColor(Color.RED);
+                editText.setBackgroundResource(R.drawable.edittext_answer_wrong_bg);
             }
             editText.setEnabled(false);
             if (editText.hasFocus()) {
                 editText.clearFocus();
             }
         }
+    }
+
+    private boolean checkFillAnswer(String answer, String myAnswer) {
+        if (answer != null) {
+            myAnswer = myAnswer.replaceAll(FILL_REG, "");
+            String[] answers = answer.split("\\|");
+            for (int i = 0; i < answers.length; i++) {
+                String _answer = answers[i].trim();
+                _answer = _answer.replaceAll(FILL_REG, "");
+                if (_answer.equalsIgnoreCase(myAnswer.trim())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

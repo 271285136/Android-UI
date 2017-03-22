@@ -203,7 +203,9 @@ public class FillBlankView {
         String targetText;
         do {
             if (answers.size() == j) break;
-            targetText = "[["+answers.get(j)+"]]";
+            String answer = answers.get(j);
+            answer = answer.replaceAll(" ", "'");//将空格替换为',防止词组分行显示,导致排版问题
+            targetText = "[["+answer+"]]";
             pos = text.indexOf(targetText, pos + 1);
             if (pos < 0) {
                 break;

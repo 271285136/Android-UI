@@ -295,4 +295,15 @@ public class FillBlankView {
         public float mStartY;
         public float mTextWidth;
     }
+    
+    public static void setLineHeight(TextView textView, int lineHeight) {
+        int fontHeight = textView.getPaint().getFontMetricsInt(null);
+        textView.setLineSpacing(dpToPixel(textView.getContext(), lineHeight) - fontHeight, 1);
+    }
+
+    public static int dpToPixel(Context context, float dp) {
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        float px = dp * (metrics.densityDpi / 160f);
+        return (int) px;
+    }
 }

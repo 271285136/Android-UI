@@ -1,12 +1,16 @@
+
+
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.text.Layout;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.style.ForegroundColorSpan;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -72,6 +76,12 @@ public class FillBlankView {
         }
     }
 
+    public void disEnabledEditTexts() {
+        for (EditText editText : editTexts) {
+            editText.setEnabled(false);
+        }
+    }
+
     /**
      * 重置输入框
      */
@@ -97,6 +107,7 @@ public class FillBlankView {
         textView = targetTextView;
         final FrameLayout container = decorateTextView(context, targetTextView);
         targetTextView.post(new Runnable() {
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
             @Override
             public void run() {
                 List<TextDemensions> demensions = replaceTargetTextAndGetDemensions(targetTextView);
@@ -126,8 +137,6 @@ public class FillBlankView {
             editText.setSingleLine();
             editText.setPadding(10,0,10,0);
             editText.setGravity(Gravity.CENTER);
-//            editText.setHint("");
-//            editText.setTextColor(container.getResources().getColor(android.R.color.holo_blue_bright));
 
             final float scale = container.getResources().getDisplayMetrics().density;
             height = (int) (28 * scale + 0.5f);
@@ -182,6 +191,7 @@ public class FillBlankView {
      * @param targetTextView
      * @return
      */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     private List<TextDemensions> replaceTargetTextAndGetDemensions(TextView targetTextView) {
         editTexts.clear();
 
@@ -199,6 +209,9 @@ public class FillBlankView {
         for(int i=0;i<layout.getLineCount();i++){
             lineWidth.add((int) layout.getLineWidth(i));
         }
+
+        float margin = textView.getLineSpacingExtra() * textView.getLineSpacingMultiplier() / 2;
+
         int j = 0;
         String targetText;
         do {
@@ -221,14 +234,25 @@ public class FillBlankView {
                 }
                 length-=lineWidth.get(i);
             }
-            dim.mStartY=i*lineHeight;
+            Rect bound = new Rect();
+            textView.getLayout().getLineBounds(i, bound);
+
+            dim.line = i;
+            dim.mStartY=bound.top - margin;//bound.top;//i*lineHeight;
             dim.mStartX = length;
             dim.mTextWidth = textPaint.measureText(targetText);
+            if (dim.mStartX + dim.mTextWidth > textView.getMeasuredWidth()) {
+                dim.mTextWidth = textView.getMeasuredWidth();
+            }
             textDimensions.add(dim);
             j++;
         } while (true);
         targetTextView.setText(sp);
         return textDimensions;
+    }
+
+    public List<EditText> getEditTexts() {
+        return editTexts;
     }
 
     /**
@@ -258,13 +282,13 @@ public class FillBlankView {
                 userAnswer = userAnswers.get(i);
                 editText.setText(userAnswer);
             }
-            if (checkFillAnswer(answers.get(i), userAnswer)){// userAnswer.equalsIgnoreCase(answers.get(i))) {
-//                editText.setTextColor(Color.GREEN);
-                editText.setBackgroundResource(R.drawable.edittext_answer_right_bg);
-            }else {
-//                editText.setTextColor(Color.RED);
-                editText.setBackgroundResource(R.drawable.edittext_answer_wrong_bg);
-            }
+//            if (checkFillAnswer(answers.get(i), userAnswer)){// userAnswer.equalsIgnoreCase(answers.get(i))) {
+////                editText.setTextColor(Color.GREEN);
+//                editText.setBackgroundResource(R.drawable.edittext_answer_right_bg);
+//            }else {
+////                editText.setTextColor(Color.RED);
+//                editText.setBackgroundResource(R.drawable.edittext_answer_wrong_bg);
+//            }
             editText.setEnabled(false);
             if (editText.hasFocus()) {
                 editText.clearFocus();
@@ -275,7 +299,7 @@ public class FillBlankView {
     private boolean checkFillAnswer(String answer, String myAnswer) {
         if (answer != null) {
             myAnswer = myAnswer.replaceAll(Constant.RegString.FILL_REG, "");
-            String[] answers = answer.split("\\|");
+            String[] answers = answer.split(";");
             for (int i = 0; i < answers.length; i++) {
                 String _answer = answers[i].trim();
                 _answer = _answer.replaceAll(Constant.RegString.FILL_REG, "");
@@ -294,8 +318,9 @@ public class FillBlankView {
         public float mStartX;
         public float mStartY;
         public float mTextWidth;
+        public int line;
     }
-    
+
     public static void setLineHeight(TextView textView, int lineHeight) {
         int fontHeight = textView.getPaint().getFontMetricsInt(null);
         textView.setLineSpacing(dpToPixel(textView.getContext(), lineHeight) - fontHeight, 1);
